@@ -171,6 +171,11 @@ def _run_topic(topic: dict) -> dict:
                 "--quick",
                 "--lookback-days",
                 "90",
+                # Watchlist is an unattended cron host: never probe browser
+                # cookies (matches the MCP server). Avoids a silent Chromium
+                # read / unattended macOS Keychain prompt when a user has set
+                # FROM_BROWSER=auto for interactive use.
+                "--no-browser-cookies",
             ],
             capture_output=True,
             text=True,

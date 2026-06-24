@@ -122,3 +122,33 @@ def test_diagnose_overrides_setup_cookie_flag(monkeypatch):
 
     assert seen["policy"].browser_cookies == "plan_only"
     assert setup.call_args.kwargs["allow_browser_cookies"] is False
+
+
+def test_research_run_defaults_to_browser_cookie_read():
+    """A plain research run reads cookies (the path that powers X auth)."""
+    parser = cli.build_parser()
+    args, extra = parser.parse_known_args(["some topic"])
+    policy = cli._config_policy_for_args(args, "some topic", extra)
+    assert policy.browser_cookies == "read"
+
+
+def test_no_browser_cookies_flag_disables_research_run_cookie_read():
+    """--no-browser-cookies flips a research run to the no-read policy."""
+    parser = cli.build_parser()
+    args, extra = parser.parse_known_args(["--no-browser-cookies", "some topic"])
+    policy = cli._config_policy_for_args(args, "some topic", extra)
+    assert policy.browser_cookies == "off"
+
+
+def test_watchlist_subprocess_disables_browser_cookies():
+    """The unattended watchlist cron must never probe browser cookies."""
+    import watchlist
+
+    fake_result = mock.Mock(returncode=1, stdout="", stderr="boom")
+    with mock.patch.object(watchlist, "store") as store, \
+         mock.patch.object(watchlist.subprocess, "run", return_value=fake_result) as run:
+        store.record_run.return_value = 1
+        watchlist._run_topic({"id": 1, "name": "test topic", "search_queries": None})
+
+    argv = run.call_args.args[0]
+    assert "--no-browser-cookies" in argv

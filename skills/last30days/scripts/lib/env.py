@@ -553,13 +553,30 @@ def cookie_extraction_browsers(config: dict[str, Any]) -> list[str]:
         return []
     if from_browser == "off":
         return []
-    if "," in from_browser:
-        browsers = [b.strip() for b in from_browser.split(",") if b.strip()]
-        return [b for b in browsers if b in known_browsers]
-    if from_browser in known_browsers:
-        return [from_browser]
     if from_browser == "auto":
         return silent_browsers + chromium_browsers
+    if "," in from_browser:
+        requested = [b.strip() for b in from_browser.split(",") if b.strip()]
+        resolved = [b for b in requested if b in known_browsers]
+        unknown = [b for b in requested if b not in known_browsers]
+        if unknown:
+            sys.stderr.write(
+                "[last30days] WARNING: FROM_BROWSER ignored unrecognized browser(s): "
+                f"{', '.join(unknown)} (known: {', '.join(known_browsers)})\n"
+            )
+            sys.stderr.flush()
+        return resolved
+    if from_browser in known_browsers:
+        return [from_browser]
+    # Non-empty, not off/auto, not a known browser, not a list: unrecognized.
+    # Warn rather than fail silently so a typo (FROM_BROWSER=chrme) is visible
+    # instead of looking like "no cookies found".
+    sys.stderr.write(
+        f"[last30days] WARNING: FROM_BROWSER='{from_browser}' is not a recognized "
+        f"browser; no cookies will be read (known: {', '.join(known_browsers)}, "
+        "or 'auto'/'off')\n"
+    )
+    sys.stderr.flush()
     return []
 
 
