@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-07-03
+
+### Added
+
+- StockTwits as a source, gated to ticker/crypto topics only. Surfaces a retail sentiment ratio (self-reported Bullish/Bearish tags) and message volume on a resolved symbol. Inert on non-financial topics: an unambiguous finance-vocabulary gate (cashtags, "stock", "earnings", "dividend", "crypto", named coins) keeps it from injecting stock chatter into general runs, and it degrades to an empty lane if the public API fails without touching other sources. ([#658](https://github.com/mvanhorn/last30days-skill/pull/658), thanks @wtiwana)
+- LinkedIn as a source via ScrapeCreators, surfacing articles as high-signal results with date-range filtering, gated behind `INCLUDE_SOURCES`. ([#702](https://github.com/mvanhorn/last30days-skill/pull/702))
+- arXiv and Techmeme sources (default-on) plus Trustpilot (opt-in). ([#709](https://github.com/mvanhorn/last30days-skill/pull/709))
+
 ### Fixed
 
+- Runtime preflight now auto-provisions a uv-managed CPython 3.12 on hosts that have `uv` but no system Python 3.12+ (most agent sandboxes), instead of hard-failing the version gate. The install is bounded by a 30s HTTP timeout, matches an existing managed `>=3.12` interpreter before downloading, and announces the one-time ~28MB download on stderr rather than installing silently; hosts without `uv` still get the original clear error. Setup invocations now honor `LAST30DAYS_PYTHON` so first-run setup works on the same hosts. ([#738](https://github.com/mvanhorn/last30days-skill/pull/738), thanks @buntysomroy; setup-interpreter fix adapted from #699 by @SeanGearin)
+- Setup wizard summary now displays the install status of the arXiv/Techmeme pp_sources CLIs, so users can see whether they landed on PATH. ([#741](https://github.com/mvanhorn/last30days-skill/pull/741), thanks @23241a6749)
 - `--diagnose` / `--preflight` no longer falsely reports X as unreachable when X auth comes from `FROM_BROWSER` browser cookies. These modes run in `plan_only` and skip cookie extraction for privacy (no Keychain access), so X was dropped from `available_sources` even though a real run authenticates fine. A new side-effect-free `env.x_pending_browser_auth` predicate now reports X as available-pending-browser-auth (and surfaces an `x_pending_browser_auth` flag in `--diagnose`) by keying only on the already-resolved browser list — no cookie is read. Covers every configured browser, including Chrome. ([#692](https://github.com/mvanhorn/last30days-skill/issues/692); first reported and fixed by @23241a6749 in #700)
+
+### Internal
+
+- Tightened Hermes `.skillignore` regression coverage: the test now fails if an ignored path is deleted without updating the ignore list, or if a runtime-contract file is accidentally ignored. ([#739](https://github.com/mvanhorn/last30days-skill/pull/739), thanks @SyntaxSawdust)
 
 ## [3.8.3] - 2026-06-25
 
